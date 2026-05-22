@@ -1,0 +1,64 @@
+# #!/bin/bash
+# set -a
+# source "./env.env"
+# set +a
+
+# LOCAL_SERVICE="$SERVICE_NAME"
+# LOCAL_IP="$SERVER_IP"
+# EXPECTED_REPLICAS="$REPLICAS"
+# ssh -i "$SSH_KEY_PATH" root@"$LOCAL_IP" -T << EOF
+
+# # Create the hello.sh script remotely
+# cat > ./hello.sh << 'SCRIPT'
+# #!/bin/bash
+# set -e
+# set -x
+# # Capture the output from the kamal-proxy list command
+# RAW_LIST=\$(docker exec kamal-proxy kamal-proxy list | sed 's/\x1b\[[0-9;]*m//g')
+
+# # Get the services to remove (matching the pattern)
+# EXTRA_SERVICES=\$(echo "\$RAW_LIST" | awk 'NR>1 {print \$1}' | grep -E "${LOCAL_SERVICE}-web-[0-9]+" | tr -d '\r')
+
+# # Get the running container IDs
+# WEB_IDS=\$(docker ps \
+#   --filter "label=service=$LOCAL_SERVICE" \
+#   --filter "status=running" \
+#   --format "{{.ID}} {{.Label \"role\"}}" \
+#   | grep "web" \
+#   | awk '{print \$1}' \
+#   | tr -d '\r')
+
+# # Prepare target flags for the deploy command
+# TARGET_FLAGS=""
+# for ID in \$WEB_IDS; do
+#     echo "DEBUG: Adding target for container ID='\$ID'"
+#     TARGET_FLAGS="\$TARGET_FLAGS --target \$ID:3000"
+# done
+
+# # Remove extra services
+# for EXTRA in \$EXTRA_SERVICES; do
+#     [ -z "\$EXTRA" ] && continue
+#     echo "DEBUG: Removing -> [\$EXTRA]"
+#     docker exec kamal-proxy kamal-proxy remove "\$EXTRA"
+# done
+
+# # Deploy the application with the specified targets
+# docker exec kamal-proxy kamal-proxy deploy "${LOCAL_SERVICE}-web" \$TARGET_FLAGS --host "$LOCAL_IP"
+
+# ALL_IDS=\$(docker ps --filter "label=service=${LOCAL_SERVICE}" --filter "status=running" --format "{{.ID}}")
+  
+#   COUNT=0
+#   for ID in \$ALL_IDS; do
+#     COUNT=\$((COUNT + 1))
+#     # We use the local variable injected directly into the heredoc
+#     if [ \$COUNT -gt $EXPECTED_REPLICAS ]; then
+#       echo "Pruning orphaned replica: \$ID (Count: \$COUNT)"
+#       docker rm -f "\$ID"
+#     fi
+#   done
+# SCRIPT
+
+# # Make the script executable and run it
+# chmod +x ./hello.sh
+# ./hello.sh
+# EOF
