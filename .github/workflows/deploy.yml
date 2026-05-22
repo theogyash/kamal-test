@@ -44,7 +44,8 @@ jobs:
 
       - name: reboot the proxy with Kamal
         run: kamal proxy reboot
-
+        env:
+            KAMAL_REGISTRY_PASSWORD: ${{ env.KAMAL_REGISTRY_PASSWORD }}
       - name: Deploy with Kamal
         run: kamal deploy
         env:
