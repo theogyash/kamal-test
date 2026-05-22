@@ -42,6 +42,9 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/kamal-test-new.pem
           chmod 600 ~/.ssh/kamal-test-new.pem
 
+      - name: reboot the proxy with Kamal
+        run: kamal proxy reboot
+
       - name: Deploy with Kamal
         run: kamal deploy
         env:
