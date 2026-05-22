@@ -29,7 +29,8 @@ ssh:
 
 
 proxy:
-  host: 13.126.175.228
+  ssl: true
+  host: soulbol-api.rvjtech.net
   app_port: 3000       
   healthcheck:             
     path: /up            

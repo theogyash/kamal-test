@@ -1,5 +1,5 @@
-service: my-node-app #Unique name for all containers and services                
-image: kamal #repo name
+service: soulbol-server #Unique name for all containers and services                
+image: soulbol-server-kamal #repo name
 
 builder:
   arch: amd64
@@ -7,7 +7,7 @@ builder:
 servers:
  web:
   hosts:
-    - 13.126.175.228
+    - 13.207.60.18
   env:
     APP_ROLE: web
   proxy:
@@ -15,7 +15,7 @@ servers:
  
  Worker:
   hosts:
-    - 13.126.175.228
+    - 13.207.60.18
 
   env:
     APP_ROLE: worker
@@ -28,7 +28,8 @@ ssh:
       - ~/.ssh/kamal-test-new.pem
 
 proxy:
-  host: 13.126.175.228
+  # ssl: true
+  host: 13.207.60.18
   app_port: 3000       
   healthcheck:             
     path: /up            
