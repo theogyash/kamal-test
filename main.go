@@ -45,12 +45,12 @@ func startWorker() {
 const workerURL = "http://13.127.117.248:8081/worker-status" 
 
 func startWebServer() {
-    fmt.Println("Starting Web Server...")
+    fmt.Println("Starting Web Server again...")
     
     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
         workerStatus, err := fetchWorkerStatus()
         
-        fmt.Fprintf(w, "<h1>Hello from the Web Server!</h1>")
+        fmt.Fprintf(w, "<h1>Hello from the ci/cd Web Server!</h1>")
 
         if err != nil {
             // Worker is down or unreachable
