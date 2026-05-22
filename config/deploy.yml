@@ -38,7 +38,7 @@ proxy:
 
 
 registry:
- server: 421600551233.dkr.ecr.ap-south-1.amazonaws.com 
+ server: 495599768662.dkr.ecr.ap-south-1.amazonaws.com
  username: AWS
  password:  
   - KAMAL_REGISTRY_PASSWORD
