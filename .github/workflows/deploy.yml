@@ -59,8 +59,10 @@ jobs:
             sudo chown root:root /root/.ssh/authorized_keys
             sudo rm -f /root/.ssh/authorized_keys.tmp
           EOF
-          
+
       - name: Deploy with Kamal
-        run: kamal deploy
+        run: |
+          kamal setup
+          kamal deploy
         env:
             KAMAL_REGISTRY_PASSWORD: ${{ env.KAMAL_REGISTRY_PASSWORD }}
