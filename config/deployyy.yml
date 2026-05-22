@@ -25,7 +25,8 @@ servers:
 ssh:
  user: root
  keys:
-      - ~/.ssh/kamal-test-new.pem
+      - /Users/yash/Downloads/kamal-test-new.pem
+
 
 proxy:
   host: 13.126.175.228
@@ -39,5 +40,4 @@ proxy:
 registry:
  server: 421600551233.dkr.ecr.ap-south-1.amazonaws.com 
  username: AWS
- password:  
-  - KAMAL_REGISTRY_PASSWORD
+ password: <%= %x(aws ecr get-login-password --region ap-south-1 --profile rvj-yash) %> 
