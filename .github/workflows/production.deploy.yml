@@ -1,0 +1,63 @@
+name: Deploy Production with Kamal
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Ruby & Kamal
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2.2
+          bundler-cache: true
+
+      - name: Install Kamal
+        run: gem install kamal
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Get ECR password
+        run: |
+            ECR_PASSWORD=$(aws ecr get-login-password --region ap-south-1)
+            echo "::add-mask::$ECR_PASSWORD"
+            echo "KAMAL_REGISTRY_PASSWORD=$ECR_PASSWORD" >> $GITHUB_ENV
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/soulbol-kamal-ronak.pem
+          chmod 600 ~/.ssh/soulbol-kamal-ronak.pem
+
+      - name: Setup root SSH access on instance
+        run: |
+          SERVER_IP=$(grep -A5 'hosts:' config/deploy.staging.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          ssh -i ~/.ssh/soulbol-kamal-ronak.pem -o StrictHostKeyChecking=no ubuntu@$SERVER_IP bash << 'EOF'
+            sudo mkdir -p /root/.ssh
+            sudo chmod 700 /root/.ssh
+            sudo cp /home/ubuntu/.ssh/authorized_keys /root/.ssh/authorized_keys.tmp
+            sudo sed 's/^no-port-forwarding[^"]*exit 142" //' /root/.ssh/authorized_keys.tmp | sudo tee /root/.ssh/authorized_keys
+            sudo chmod 600 /root/.ssh/authorized_keys
+            sudo chown root:root /root/.ssh/authorized_keys
+            sudo rm -f /root/.ssh/authorized_keys.tmp
+          EOF
+
+      - name: Deploy staging with Kamal
+        run: |
+          kamal setup -d staging
+          kamal deploy -d staging
+        env:
+          KAMAL_REGISTRY_PASSWORD: ${{ env.KAMAL_REGISTRY_PASSWORD }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1
