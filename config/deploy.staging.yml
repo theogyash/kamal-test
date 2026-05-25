@@ -1,0 +1,91 @@
+service: stg-soulbol-server
+image: stg-soulbol-server
+
+servers:
+  web:
+    hosts:
+      - 3.110.169.112
+    env:
+      clear:
+        ENABLE_RAILS: "true"
+
+        # Server/web-only envs
+        REFUND_AND_CANCELLATION_POLICY_URL: "https://cdn.mydocsy.com/public_assets/Refund+and+Cancellation+Policy.pdf"
+        WEB_URL: "https://stg-web.soulbol.com"
+        CDN_FOG_DIRECTORY: "stg-soulbol-cloudfront-soulbol-assets-s3"
+        NODE_ORIGIN: "localhost:3000,stg-web.soulbol.com,localhost:5173,stg-meetings.soulbol.com,web3.soulbol.com,stg-web3.soulbol.com,staging.soulbol.com"
+        MEETING_HOST_URL: "https://stg-meetings.soulbol.com"
+        PRIVACY_POLICY_URL: "https://mydocsy.com/privacy-policy"
+
+      secret:
+        # Serve-only secret
+        - HUNDRED_MS_WEBHOOK_KEY
+
+    proxy:
+      path_prefix: /
+
+  worker:
+    hosts:
+      - 3.110.169.112
+    env:
+      clear:
+        ENABLE_BACKGROUND_JOBS: "true"
+
+    cmd: /app/app_server.sh
+    proxy: false
+
+proxy:
+  ssl: true
+  host: staging.soulbol.com
+  app_port: 3000
+  healthcheck:
+    path: /up
+    interval: 1
+    timeout: 3
+
+
+env:
+  clear:
+    # Common envs used by both web and worker
+    RAILS_LOG_TO_STDOUT: "true"
+    WEB_HOST_URL: "https://staging.soulbol.com"
+    INTERVIEW_SESSION_URL: "https://calendly.com/soulbol/30min"
+    MANAGER_EMAIL: "admin@soulbol.com"
+    HUNDRED_MS_MEETING_BASE_URL: "https://soulbol-stg-1.app.100ms.live"
+    BREVO_SENDER_EMAIL: "info@mydocsy.com"
+    RAZORPAY_API_KEY: "rzp_test_j5uDM6oROM9Nrr"
+    MYSQL_HOST: "10.104.7.173"
+    SENTRY_DSN: "https://670d869bc71ceb82f80d1feb76869819@o4508476329426944.ingest.de.sentry.io/4508476332179536"
+    BREVO_SMTP_USERNAME: "7548f0003@smtp-brevo.com"
+    S3_BUCKET: "stg-soulbol-cloudfront-soulbol-cdn-s3"
+    AWS_REGION: "ap-south-1"
+    APPOINTMENT_RECORDINGS_BUCKET: "stg-soulbol-appointment-recordings-s3-01"
+    MYSQL_USER: "admin"
+    HUNDRED_MS_BASE_URL: "https://api.100ms.live/v2/"
+    HUNDRED_MS_TEMPLATE_ID: "67a485064b6eb78daeed4b11"
+    SES_AWS_REGION: "ap-south-1"
+    CDN_HOST_URL: "https://stg-cdn.soulbol.com"
+    SES_TRANSACTIONAL_EMAIL: "info@soulbol.com"
+    SES_PROMOTIONAL_EMAIL: "promotions@soulbol.co.in"
+    BREVO_SENDER_NAME: "Soulbol"
+    REDIS_URL: "redis://10.104.7.173:6379/1"
+
+  secret:
+    # Common secrets used by both web and worker
+    - MYSQL_PASSWORD
+    - SECRET_KEY_BASE
+    - S3_ACCESS_KEY_ID
+    - S3_SECRET_ACCESS_KEY
+    - RAZORPAY_API_SECRET
+    - SES_SECRET_ACCESS_KEY
+    - SES_ACCESS_KEY
+    - HUNDRED_MS_API_KEY
+    - HUNDRED_MS_APP_SECRET
+    - COMET_CHAT_API_KEY
+    - BREVO_API_SECRET
+    - BREVO_SMTP_PASSWORD
+    - SOULBOL_FCM_NOTIFICATION_SECRET
+    - OPENAI_ACCESS_TOKEN
+    - RAZORPAY_WEBHOOK_SECRET
+    - NEWRELIC_LICENSE_KEY
+    - QUICK_BLOX_API_KEY

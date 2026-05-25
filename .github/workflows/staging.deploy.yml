@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   deploy:
     runs-on: ubuntu-latest
 
@@ -40,14 +39,9 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/soulbol-kamal-ronak.pem
           chmod 600 ~/.ssh/soulbol-kamal-ronak.pem
 
-    #   - name: reboot the proxy with Kamal
-    #     run: kamal proxy reboot -y
-    #     env:
-    #         KAMAL_REGISTRY_PASSWORD: ${{ env.KAMAL_REGISTRY_PASSWORD }}
-
       - name: Setup root SSH access on instance
         run: |
-          SERVER_IP=$(grep -A2 'hosts:' config/deploy.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          SERVER_IP=$(grep -A5 'hosts:' config/deploy.staging.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           ssh -i ~/.ssh/soulbol-kamal-ronak.pem -o StrictHostKeyChecking=no ubuntu@$SERVER_IP bash << 'EOF'
             sudo mkdir -p /root/.ssh
             sudo chmod 700 /root/.ssh
@@ -58,9 +52,12 @@ jobs:
             sudo rm -f /root/.ssh/authorized_keys.tmp
           EOF
 
-      - name: Deploy with Kamal
+      - name: Deploy staging with Kamal
         run: |
-          kamal setup
-          kamal deploy
+          kamal setup -d staging
+          kamal deploy -d staging
         env:
-            KAMAL_REGISTRY_PASSWORD: ${{ env.KAMAL_REGISTRY_PASSWORD }}
+          KAMAL_REGISTRY_PASSWORD: ${{ env.KAMAL_REGISTRY_PASSWORD }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1

@@ -1,0 +1,103 @@
+service: prod-soulbol-server
+image: prod-soulbol-server
+
+servers:
+  web:
+    hosts:
+      - 3.110.169.112
+    env:
+      clear:
+        ENABLE_RAILS: "true"
+        WEB_URL: "https://web.soulbol.com"
+        CDN_FOG_DIRECTORY: "prod-soulbol-cloudfront-soulbol-assets-s3"
+        NODE_ORIGIN: "https://web.soulbol.com,https://soulboul-web.mydocsy.com,https://meetings.soulbol.com,web3.soulbol.com,https://soulbol.com,https://www.soulbol.com"
+        MEETING_HOST_URL: "https://meetings.soulbol.com"
+        REFUND_AND_CANCELLATION_POLICY_URL: "https://cdn.mydocsy.com/public_assets/Refund+and+Cancellation+Policy.pdf"
+        PRIVACY_POLICY_URL: "https://mydocsy.com/privacy-policy"
+
+      secret:
+        # Present only in ECS server task
+        - RECAPTCHA_SITE_KEY
+        - RECAPTCHA_SECRET_KEY
+        - FIREBASE_API_KEY
+        - HUNDRED_MS_WEBHOOK_KEY
+
+    proxy:
+      path_prefix: /
+
+  worker:
+    hosts:
+      - 3.110.169.112
+    env:
+      clear:
+        ENABLE_BACKGROUND_JOBS: "true"
+    cmd: /app/app_server.sh
+    proxy: false
+
+ssh:
+  user: root
+  keys:
+    - ~/.ssh/soulbol-kamal-ronak.pem
+
+proxy:
+  ssl: true
+  host: soulbol.com
+  app_port: 3000
+  healthcheck:
+    path: /up
+    interval: 1
+    timeout: 3
+
+registry:
+  server: 495599768662.dkr.ecr.ap-south-1.amazonaws.com
+  username: AWS
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+env:
+  clear:
+    # Common envs present in both ECS server and worker tasks
+    RAILS_LOG_TO_STDOUT: "true"
+    WEB_HOST_URL: "https://soulbol.com"
+    INTERVIEW_SESSION_URL: "https://calendly.com/atul-soulbol/30min"
+    MANAGER_EMAIL: "ronak@soulbol.com"
+    HUNDRED_MS_MEETING_BASE_URL: "https://soulbol.app.100ms.live"
+    BREVO_SENDER_EMAIL: "info@soulbol.com"
+    S3_BUCKET: "prod-soulbol-cloudfront-soulbol-cdn-s3"
+    AWS_REGION: "ap-south-1"
+    APPOINTMENT_RECORDINGS_BUCKET: "prod-soulbol-appointment-recordings-s3-01"
+    MYSQL_USER: "admin"
+    HUNDRED_MS_BASE_URL: "https://api.100ms.live/v2/"
+    SES_AWS_REGION: "ap-south-1"
+    CDN_HOST_URL: "https://cdn.soulbol.com"
+    SES_TRANSACTIONAL_EMAIL: "info@soulbol.com"
+    SES_PROMOTIONAL_EMAIL: "promotions@soulbol.co.in"
+    BREVO_SENDER_NAME: "Soulbol"
+    REDIS_URL: "redis://prod-soulbol-elasticache-redis-01-001.abpguy.0001.aps1.cache.amazonaws.com:6379/1"
+    HUNDRED_MS_TEMPLATE_ID: "67632c8780b706a2bad"
+    RAZORPAY_API_KEY: "rzp_live_MQ6yfCleO6gxVE"
+    MYSQL_HOST: "prod-soulbol-mysql-rds-01.crucg8q28dnx.ap-south-1.rds.amazonaws.com"
+    SENTRY_DSN: "https://99ca2163981f4232fc5fa4c69b9843f2@o4508476329426944.ingest.de.sentry.io/4508505165004880"
+    BREVO_SMTP_USERNAME: "823b26001@smtp-brevo.com"
+
+  secret:
+    # Common secrets present in both ECS server and worker tasks
+    - MYSQL_PASSWORD
+    - SECRET_KEY_BASE
+    - S3_ACCESS_KEY_ID
+    - S3_SECRET_ACCESS_KEY
+    - MSG91_AUTH_KEY
+    - HUNDRED_MS_API_KEY
+    - HUNDRED_MS_APP_SECRET
+    - SES_SECRET_ACCESS_KEY
+    - SES_ACCESS_KEY
+    - COMET_CHAT_API_KEY
+    - BREVO_API_SECRET
+    - RAZORPAY_API_SECRET
+    - BREVO_SMTP_PASSWORD
+    - SOULBOL_FCM_NOTIFICATION_SECRET
+    - OPENAI_ACCESS_TOKEN
+    - NEWRELIC_LICENSE_KEY
+    - RAZORPAY_WEBHOOK_SECRET
+    - AI_SENSY_API_KEY
+    - QUICK_BLOX_API_KEY
