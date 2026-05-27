@@ -42,7 +42,7 @@ jobs:
 
       - name: Setup root SSH access on instance
         run: |
-          SERVER_IP=$(grep -A5 'hosts:' config/deploy.staging.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          SERVER_IP=$(grep -A5 'hosts:' config/deploy.prod.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           ssh -i ~/.ssh/soulbol-kamal-ronak.pem -o StrictHostKeyChecking=no ubuntu@$SERVER_IP bash << 'EOF'
             sudo mkdir -p /root/.ssh
             sudo chmod 700 /root/.ssh
@@ -55,10 +55,10 @@ jobs:
 
       - name: Ensure swap exists on target server
         run: |
-          SERVER_IP=$(grep -A5 'hosts:' config/deploy.staging.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          SERVER_IP=$(grep -A5 'hosts:' config/deploy.prod.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           
           if [ -z "$SERVER_IP" ]; then
-            echo "No server IP found in config/deploy.staging.yml"
+            echo "No server IP found in config/deploy.prod.yml"
             exit 1
           fi
           
