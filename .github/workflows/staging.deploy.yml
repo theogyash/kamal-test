@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        
       - name: Install Ruby & Kamal
         uses: ruby/setup-ruby@v1
         with:
@@ -26,7 +26,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
-
+      
       - name: Get ECR password
         run: |
             ECR_PASSWORD=$(aws ecr get-login-password --region ap-south-1)
@@ -36,6 +36,7 @@ jobs:
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
+          echo "::add-mask::${{ secrets.SSH_PRIVATE_KEY }}"
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/soulbol-kamal-ronak.pem
           chmod 600 ~/.ssh/soulbol-kamal-ronak.pem
 
@@ -46,14 +47,74 @@ jobs:
             sudo mkdir -p /root/.ssh
             sudo chmod 700 /root/.ssh
             sudo cp /home/ubuntu/.ssh/authorized_keys /root/.ssh/authorized_keys.tmp
-            sudo sed 's/^no-port-forwarding[^"]*exit 142" //' /root/.ssh/authorized_keys.tmp | sudo tee /root/.ssh/authorized_keys
+            sudo sed 's/^no-port-forwarding[^"]*exit 142" //' /root/.ssh/authorized_keys.tmp | sudo tee /root/.ssh/authorized_keys > /dev/null
             sudo chmod 600 /root/.ssh/authorized_keys
             sudo chown root:root /root/.ssh/authorized_keys
             sudo rm -f /root/.ssh/authorized_keys.tmp
           EOF
 
+      - name: Ensure swap exists on target server
+        run: |
+          SERVER_IP=$(grep -A5 'hosts:' config/deploy.staging.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          
+          if [ -z "$SERVER_IP" ]; then
+            echo "No server IP found in config/deploy.staging.yml"
+            exit 1
+          fi
+          
+          echo "Configuring swap on $SERVER_IP"
+          
+          ssh -i ~/.ssh/soulbol-kamal-ronak.pem -o StrictHostKeyChecking=no root@$SERVER_IP 'bash -s' <<'EOF'
+          set -e
+          
+          SWAPFILE="/swapfile"
+          SWAPSIZE="4G"
+          
+          echo "Current memory:"
+          free -h || true
+          
+          if swapon --show=NAME | grep -qx "$SWAPFILE"; then
+            echo "Swap is already active at $SWAPFILE. Skipping creation."
+          else
+            if [ ! -f "$SWAPFILE" ]; then
+              echo "Creating $SWAPSIZE swap file at $SWAPFILE..."
+          
+              if command -v fallocate >/dev/null 2>&1; then
+                fallocate -l "$SWAPSIZE" "$SWAPFILE"
+              else
+                dd if=/dev/zero of="$SWAPFILE" bs=1M count=4096
+              fi
+          
+              chmod 600 "$SWAPFILE"
+              mkswap "$SWAPFILE"
+            else
+              echo "$SWAPFILE already exists. Enabling it."
+              chmod 600 "$SWAPFILE"
+            fi
+          
+            swapon "$SWAPFILE"
+          fi
+          
+          if ! grep -qE '^[^#]*[[:space:]]/swapfile[[:space:]]' /etc/fstab; then
+            echo '/swapfile none swap sw 0 0' >> /etc/fstab
+            echo "Added swapfile to /etc/fstab"
+          else
+            echo "Swapfile already present in /etc/fstab"
+          fi
+          
+          sysctl vm.swappiness=10
+          
+          if ! grep -q '^vm.swappiness=10' /etc/sysctl.conf; then
+            echo 'vm.swappiness=10' >> /etc/sysctl.conf
+          fi
+          
+          echo "Final memory:"
+          free -h
+          EOF
+
       - name: Deploy staging with Kamal
         run: |
+          kamal lock release -d staging
           kamal setup -d staging
           kamal deploy -d staging
         env:

@@ -31,7 +31,7 @@ servers:
     env:
       clear:
         ENABLE_BACKGROUND_JOBS: "true"
-    cmd: /app/app_server.sh
+    cmd: sh /app/app_server.sh
     proxy: false
 
 ssh:
@@ -44,9 +44,13 @@ proxy:
   host: soulbol.com
   app_port: 3000
   healthcheck:
-    path: /up
+    path: /ping
     interval: 1
     timeout: 3
+
+deploy_timeout: 300
+drain_timeout: 30
+retain_containers: 3
 
 registry:
   server: 495599768662.dkr.ecr.ap-south-1.amazonaws.com
@@ -54,9 +58,12 @@ registry:
   password:
     - KAMAL_REGISTRY_PASSWORD
 
+
 env:
   clear:
     # Common envs present in both ECS server and worker tasks
+    RAILS_ENV: "production"
+    RACK_ENV: "production"
     RAILS_LOG_TO_STDOUT: "true"
     WEB_HOST_URL: "https://soulbol.com"
     INTERVIEW_SESSION_URL: "https://calendly.com/atul-soulbol/30min"
