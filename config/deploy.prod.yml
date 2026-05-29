@@ -52,13 +52,6 @@ deploy_timeout: 300
 drain_timeout: 30
 retain_containers: 3
 
-registry:
-  server: 495599768662.dkr.ecr.ap-south-1.amazonaws.com
-  username: AWS
-  password:
-    - KAMAL_REGISTRY_PASSWORD
-
-
 env:
   clear:
     # Common envs present in both ECS server and worker tasks
